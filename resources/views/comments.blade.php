@@ -1,8 +1,4 @@
-@php
-    $sortedComments = App\Models\Comment::sort_comments(
-      $comments, isset($sort) ? $sort : 'popular');
-@endphp
-@foreach ($sortedComments as $comment)
+@foreach ($comments as $comment)
     <div class="comment-wrap">
         <div class="comment" data-id="{{ $comment->id }}">
             <div class="comment__image"></div>
@@ -31,13 +27,9 @@
         @include('reply_form', ['form_title' => 'Ответить'])
     </div>
 
-    @php
-        $children = $comment->children()->get();
-    @endphp
-
-    <div class="children-comments">
-        @if($children->count())
-            @include('comments', ['comments' => $children])
-        @endif
-    </div>
+    @if($comment->children->count())
+        <div class="children-comments">
+            @include('comments', ['comments' => $comment->children])
+        </div>
+    @endif
 @endforeach

@@ -8,10 +8,11 @@ use Illuminate\Http\Request;
 
 class PostController extends Controller
 {
-    public static function show(Request $request, $id)
+    public static function show (Request $request, $id)
     {
         $post = Post::findOrFail($id);
-        $comments = $post->commentsOnlyParents;
+        $comments = $post->getCommentsTree();
+        $comments = Comment::sortComments($comments);
 
         return view('post.show', [
             'post' => $post,
@@ -19,9 +20,10 @@ class PostController extends Controller
         ]);
     }
 
-    public static function comment(Request $request, $postId)
+    public static function comment (Request $request, $postId)
     {
         $post = Post::findOrFail($postId);
+        $sort = $request->input('sort');
 
         if ($request->input('parent_id')) {
             $parentComment = Comment::findOrFail($request->input('parent_id'));
@@ -45,15 +47,18 @@ class PostController extends Controller
             'post_id' => $postId,
         ]);
 
+        $comments = $post->getCommentsTree();
+        $comments = Comment::sortComments($comments, $sort);
+
         return response()->json([
             'status' => true,
             'comments' => view('comments', [
-                'comments' => $post->commentsOnlyParents
+                'comments' => $comments
             ])->render(),
         ]);
     }
 
-    public static function like(Request $request, $commentId)
+    public static function like (Request $request, $commentId)
     {
         $comment = Comment::findOrFail($commentId);
         $comment->like += 1;
@@ -64,7 +69,7 @@ class PostController extends Controller
         ]);
     }
 
-    public static function dislike(Request $request, $commentId)
+    public static function dislike (Request $request, $commentId)
     {
         $comment = Comment::findOrFail($commentId);
         $comment->dislike += 1;
@@ -75,14 +80,15 @@ class PostController extends Controller
         ]);
     }
 
-    public static function get_comments(Request $request, $postId)
+    public static function get_comments (Request $request, $postId)
     {
         $post = Post::findOrFail($postId);
         $sort = $request->input('sort');
-        $comments = $post->commentsOnlyParents;
+        $comments = $post->getCommentsTree();
+        $comments = Comment::sortComments($comments, $sort);
         return response()->json([
             'comments' => view('comments', [
-                'comments' => $comments, 'sort' => $sort
+                'comments' => $comments
             ])->render()
         ]);
     }
